@@ -27,6 +27,12 @@ export type Capability =
   | "reconcile"
   | "finding_detail"
   | "finding_disposition"
+  | "finding_assign"
+  | "finding_resolve"
+  | "finding_dismiss"
+  | "resolution_notes"
+  | "finding_audit_history"
+  | "evidence_documents"
   | "quickbooks_connect"
   | "quickbooks_sync"
   | "pricing_plans"
@@ -81,6 +87,12 @@ const NOTHING: Capabilities = {
   reconcile: false,
   finding_detail: false,
   finding_disposition: false,
+  finding_assign: false,
+  finding_resolve: false,
+  finding_dismiss: false,
+  resolution_notes: false,
+  finding_audit_history: false,
+  evidence_documents: false,
   quickbooks_connect: false,
   quickbooks_sync: false,
   pricing_plans: false,
@@ -98,6 +110,12 @@ const DEMO_CAPABILITIES: Capabilities = {
   reconcile: true,
   finding_detail: true,
   finding_disposition: true,
+  finding_assign: true,
+  finding_resolve: true,
+  finding_dismiss: true,
+  resolution_notes: true,
+  finding_audit_history: true,
+  evidence_documents: true,
   quickbooks_connect: false,
   quickbooks_sync: false,
   pricing_plans: true,
@@ -109,12 +127,9 @@ const DEMO_CAPABILITIES: Capabilities = {
  * handoff to the preserved workspace, so real capabilities stay off.
  */
 const SECURE_LINK_CAPABILITIES: Capabilities = {
-  ...DEMO_CAPABILITIES,
-  access_request: false,
-  create_analysis: false,
-  upload_files: false,
-  reconcile: false,
-  finding_disposition: false,
+  ...NOTHING,
+  // Marketing-only reads. No customer or synthetic record is presented as data.
+  pricing_plans: true,
 };
 
 /**
@@ -128,7 +143,16 @@ const API_CAPABILITIES: Capabilities = {
   analysis_detail: true,
   create_analysis: true,
   upload_files: true,
+  finding_detail: true,
   finding_disposition: true,
+  // PATCH /api/findings/:id supports assigned_to and status open|resolved only.
+  finding_assign: true,
+  finding_resolve: true,
+  // No dismissed state, no resolution note, no per-finding audit or document URL.
+  finding_dismiss: false,
+  resolution_notes: false,
+  finding_audit_history: false,
+  evidence_documents: false,
   quickbooks_connect: true,
   quickbooks_sync: true,
 };
@@ -198,6 +222,6 @@ export function secureWorkspacePath(config: ProductConfig, path: string): string
 export const MODE_BANNERS: Record<ProductMode, string | null> = {
   demo: "Demo mode — synthetic records. Not customer data and not a proof of results.",
   "secure-link":
-    "Preview mode — records shown here are synthetic. Real analyses run in the secure AP Exception Desk workspace.",
+    "Preview mode — this shell holds no analyses. Real work happens in the secure AP Exception Desk workspace.",
   api: null,
 };

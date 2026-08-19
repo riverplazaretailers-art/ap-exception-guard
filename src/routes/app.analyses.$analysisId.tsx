@@ -14,6 +14,80 @@ import { count, day, usd } from "@/lib/format";
 import { can, productApi, type FindingCategory, type FindingState } from "@/lib/product";
 import { CATEGORY_LABELS, CATEGORY_ORDER, FINDING_STATE_LABELS } from "@/lib/product/workflow";
 
+/**
+ * QuickBooks Online connection state comes straight from the backend status
+ * route; nothing here decides whether a connection is usable.
+ */
+function QuickBooksPanel({ analysisId }: { analysisId: string }) {
+  const queryClient = useQueryClient();
+  const status = useQuery({
+    queryKey: ["qbo", analysisId],
+    queryFn: () => productApi.getQuickBooksStatus!(analysisId),
+    enabled: Boolean(productApi.getQuickBooksStatus),
+  });
+
+  const sync = useMutation({
+    mutationFn: () => productApi.syncQuickBooks!(analysisId),
+    onSuccess: async (outcome) => {
+      queryClient.setQueryData(["analysis", analysisId], outcome.analysis);
+      queryClient.setQueryData(["qbo", analysisId], outcome.status);
+      await queryClient.invalidateQueries({ queryKey: ["findings", analysisId] });
+    },
+  });
+
+  const startUrl = productApi.getQuickBooksStartUrl?.(analysisId);
+  const data = status.data;
+
+  return (
+    <section className="border border-border bg-surface-raised p-4">
+      <p className="eyebrow">QuickBooks Online</p>
+      {status.isLoading ? <LoadingState label="Checking connection" /> : null}
+      {status.error ? (
+        <ErrorState
+          title="Could not read the connection status"
+          message={(status.error as Error).message}
+          onRetry={() => void status.refetch()}
+        />
+      ) : null}
+      {data ? (
+        <div className="mt-2 space-y-2 text-sm">
+          <p className="font-medium">{data.connected ? "Connected" : "Not connected"}</p>
+          {data.realmLabel ? (
+            <p className="num text-xs text-muted-foreground">{data.realmLabel}</p>
+          ) : null}
+          {data.lastSyncAt ? (
+            <p className="num text-xs text-muted-foreground">Updated {day(data.lastSyncAt)}</p>
+          ) : null}
+          {data.message ? <p className="text-muted-foreground">{data.message}</p> : null}
+          {sync.isSuccess ? (
+            <SuccessNote>
+              Sync complete — {count(sync.data.records)} records, {count(sync.data.findings)}{" "}
+              findings.
+            </SuccessNote>
+          ) : null}
+          {sync.error ? (
+            <ErrorState title="Sync failed" message={(sync.error as Error).message} />
+          ) : null}
+          <div className="flex flex-wrap gap-2 pt-1">
+            {startUrl && !data.connected ? (
+              <Button asChild variant="outline" size="sm">
+                <a href={startUrl} rel="noopener noreferrer">
+                  Connect QuickBooks Online
+                </a>
+              </Button>
+            ) : null}
+            {data.connected && can("quickbooks_sync") ? (
+              <Button size="sm" onClick={() => sync.mutate()} disabled={sync.isPending}>
+                {sync.isPending ? "Syncing…" : "Sync now"}
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export const Route = createFileRoute("/app/analyses/$analysisId")({
   component: AnalysisDetail,
 });
@@ -129,6 +203,8 @@ function AnalysisDetail() {
             <MetricTile label="Records processed" value={count(analysis.documentsProcessed)} />
           </div>
 
+          {can("quickbooks_connect") ? <QuickBooksPanel analysisId={analysisId} /> : null}
+
           <section className="border border-border bg-surface-raised p-4">
             <p className="eyebrow">Data sources</p>
             <ul className="mt-2 space-y-1 text-sm">
@@ -214,6 +290,7 @@ function AnalysisDetail() {
                                 <Link
                                   to="/app/findings/$findingId"
                                   params={{ findingId: finding.id }}
+                                  search={{ analysisId }}
                                   className="text-primary hover:underline"
                                 >
                                   {finding.vendor}

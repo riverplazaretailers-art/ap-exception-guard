@@ -15,6 +15,10 @@ import { SecureWorkspaceAction, UnavailableHere } from "@/components/product/han
 import { CATEGORY_LABELS, allowedFindingActions } from "@/lib/product/workflow";
 
 export const Route = createFileRoute("/app/findings/$findingId")({
+  // Backends without a single-finding route need the analysis scope in the URL.
+  validateSearch: (search: Record<string, unknown>) => ({
+    analysisId: typeof search["analysisId"] === "string" ? (search["analysisId"] as string) : undefined,
+  }),
   component: FindingDetail,
 });
 
@@ -28,6 +32,7 @@ const EVIDENCE_KIND_LABELS: Record<string, string> = {
 
 function FindingDetail() {
   const { findingId } = Route.useParams();
+  const { analysisId } = Route.useSearch();
   const queryClient = useQueryClient();
   const [assignee, setAssignee] = useState("");
   const [note, setNote] = useState("");
@@ -35,14 +40,15 @@ function FindingDetail() {
 
   const findingQuery = useQuery({
     queryKey: ["finding", findingId],
-    queryFn: () => productApi.getFinding(findingId),
+    queryFn: () => productApi.getFinding(findingId, analysisId),
   });
 
   const act = useMutation({
     mutationFn: async (action: "assign" | "resolve" | "dismiss") => {
-      if (action === "assign") return productApi.assignFinding(findingId, assignee);
-      if (action === "resolve") return productApi.resolveFinding(findingId, note);
-      return productApi.dismissFinding(findingId, note);
+      const scope = findingQuery.data?.analysisId ?? analysisId;
+      if (action === "assign") return productApi.assignFinding(findingId, assignee, scope);
+      if (action === "resolve") return productApi.resolveFinding(findingId, note, scope);
+      return productApi.dismissFinding(findingId, note, scope);
     },
     onSuccess: async (finding, action) => {
       queryClient.setQueryData(["finding", findingId], finding);
@@ -55,7 +61,14 @@ function FindingDetail() {
   });
 
   const finding = findingQuery.data;
-  const actions = finding ? allowedFindingActions(finding.state) : [];
+  const allowed = finding ? allowedFindingActions(finding.state) : [];
+  const actions = allowed.filter(
+    (action) =>
+      (action !== "assign" || can("finding_assign")) &&
+      (action !== "resolve" || can("finding_resolve")) &&
+      (action !== "dismiss" || can("finding_dismiss")),
+  );
+  const notesRetained = can("resolution_notes");
 
   return (
     <AppShell
@@ -93,6 +106,12 @@ function FindingDetail() {
               </div>
               <p className="eyebrow mt-5">Why this was flagged</p>
               <p className="mt-1.5 text-sm text-muted-foreground">{finding.rationale}</p>
+              {finding.question ? (
+                <>
+                  <p className="eyebrow mt-4">Question to answer</p>
+                  <p className="mt-1.5 text-sm text-muted-foreground">{finding.question}</p>
+                </>
+              ) : null}
               <p className="mt-3 text-xs text-muted-foreground">
                 Detected {dateTime(finding.detectedAt)} by the reconciliation engine.
                 {finding.assignee ? ` Assigned to ${finding.assignee}.` : ""}
@@ -101,6 +120,18 @@ function FindingDetail() {
 
             <section className="border border-border bg-surface-raised p-5">
               <p className="eyebrow">Source evidence</p>
+              {finding.evidenceNote ? (
+                <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
+                  {finding.evidenceNote}
+                </p>
+              ) : null}
+              {finding.evidence.length === 0 ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {can("evidence_documents")
+                    ? "No source documents were attached to this finding."
+                    : "Source documents are held by the preserved service and are opened from the secure workspace."}
+                </p>
+              ) : null}
               <ul className="mt-3 divide-y divide-border">
                 {finding.evidence.map((item) => (
                   <li key={item.id} className="flex flex-wrap items-center gap-3 py-2.5 text-sm">
@@ -128,6 +159,13 @@ function FindingDetail() {
 
             <section className="border border-border bg-surface-raised p-5">
               <p className="eyebrow">Audit history</p>
+              {finding.audit.length === 0 ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {can("finding_audit_history")
+                    ? "No audit entries yet."
+                    : "The audit trail for this finding is retained by the preserved service and is not exposed by the v1 contract."}
+                </p>
+              ) : null}
               <ol className="mt-3 space-y-3 text-sm">
                 {finding.audit.map((entry) => (
                   <li key={entry.id} className="border-l-2 border-border pl-3">
@@ -191,31 +229,50 @@ function FindingDetail() {
 
             {actions.includes("resolve") || actions.includes("dismiss") ? (
               <div className="space-y-1.5 border-t border-border pt-4">
-                <Label htmlFor="note">Resolution note (kept in audit history)</Label>
-                <Textarea
-                  id="note"
-                  rows={4}
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
+                {notesRetained ? (
+                  <>
+                    <Label htmlFor="note">Resolution note (kept in audit history)</Label>
+                    <Textarea
+                      id="note"
+                      rows={4}
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                    />
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    This connection cannot store a resolution note, so none is collected. The
+                    preserved service records who resolved the finding and when.
+                  </p>
+                )}
                 <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    disabled={!note || act.isPending}
-                    onClick={() => act.mutate("resolve")}
-                  >
-                    Resolve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={!note || act.isPending}
-                    onClick={() => act.mutate("dismiss")}
-                  >
-                    Dismiss
-                  </Button>
+                  {actions.includes("resolve") ? (
+                    <Button
+                      size="sm"
+                      disabled={(notesRetained && !note) || act.isPending}
+                      onClick={() => act.mutate("resolve")}
+                    >
+                      Resolve
+                    </Button>
+                  ) : null}
+                  {actions.includes("dismiss") ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={(notesRetained && !note) || act.isPending}
+                      onClick={() => act.mutate("dismiss")}
+                    >
+                      Dismiss
+                    </Button>
+                  ) : null}
                 </div>
               </div>
+            ) : null}
+
+            {finding.state === "open" && actions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Dispositions are not available in this connection mode.
+              </p>
             ) : null}
 
             {actions.length === 1 && actions[0] === "reopen" ? (

@@ -27,6 +27,11 @@ describe("mode selection", () => {
     expect(config.capabilities.create_analysis).toBe(false);
     expect(config.capabilities.access_request).toBe(false);
     expect(config.capabilities.finding_disposition).toBe(false);
+    // No authenticated data capability may be on: nothing synthetic is shown as data.
+    expect(config.capabilities.list_analyses).toBe(false);
+    expect(config.capabilities.analysis_detail).toBe(false);
+    expect(config.capabilities.finding_detail).toBe(false);
+    expect(config.capabilities.session_auth).toBe(false);
   });
 
   it("enables api mode only with base URL plus contract v1", () => {
@@ -141,11 +146,51 @@ describe("demo isolation", () => {
 describe("no speculative contract outside api mode", () => {
   it("only the api adapter issues requests, and only against real /api routes", async () => {
     const calls: string[] = [];
+    const pilot = {
+      id: "p1",
+      company: "Demo Co",
+      status: "ready",
+      created_at: "2026-08-01T00:00:00Z",
+      open_count: 0,
+      file_count: 0,
+    };
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
-        calls.push(String(url));
-        return new Response(JSON.stringify({ id: "p1", findings: [] }), {
+        const target = String(url);
+        calls.push(target);
+        const payload = target.endsWith("/api/pilots")
+          ? { pilots: [pilot] }
+          : target.includes("/quickbooks/status")
+            ? { configured: true, connection: null }
+            : target.includes("/quickbooks/sync")
+              ? { records: 0, findings: 0 }
+              : target.includes("/api/findings/")
+                ? { ok: true, status: "open", assigned_to: "A. Controller" }
+                : {
+                    pilot,
+                    files: [],
+                    records: [],
+                    connections: [],
+                    findings: [
+                      {
+                        id: "f1",
+                        type: "Possible duplicate",
+                        severity: "High",
+                        vendor: "Demo Co",
+                        invoice: "INV-1",
+                        amount: 100,
+                        summary: "Two payments reference the same invoice.",
+                        question: null,
+                        evidence: null,
+                        status: "open",
+                        assigned_to: "A. Controller",
+                        created_at: "2026-08-01T00:00:00Z",
+                        updated_at: "2026-08-01T00:00:00Z",
+                      },
+                    ],
+                  };
+        return new Response(JSON.stringify(payload), {
           status: 200,
           headers: { "content-type": "application/json" },
         });
@@ -156,7 +201,7 @@ describe("no speculative contract outside api mode", () => {
     await api.listAnalyses();
     await api.getAnalysis("p1");
     await api.listFindings({ analysisId: "p1" });
-    await api.assignFinding("f1", "A. Controller");
+    await api.assignFinding("f1", "A. Controller", "p1");
     await api.getQuickBooksStatus!("p1");
     await api.syncQuickBooks!("p1");
 
@@ -165,8 +210,11 @@ describe("no speculative contract outside api mode", () => {
       `${API}/api/pilots/p1`,
       `${API}/api/pilots/p1`,
       `${API}/api/findings/f1`,
+      `${API}/api/pilots/p1`,
       `${API}/api/integrations/quickbooks/status?pilotId=p1`,
       `${API}/api/integrations/quickbooks/sync`,
+      `${API}/api/pilots/p1`,
+      `${API}/api/integrations/quickbooks/status?pilotId=p1`,
     ]);
     expect(calls.some((call) => call.includes("/v1/"))).toBe(false);
     expect(api.getQuickBooksStartUrl!("p1")).toBe(

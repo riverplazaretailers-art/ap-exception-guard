@@ -10,6 +10,11 @@ import { ErrorState } from "@/components/product/states";
 import { IntegrationStatusBadge } from "@/components/product/status-badge";
 import { analytics } from "@/lib/analytics";
 import { can, isSecureLinkMode, productApi, type DataSource } from "@/lib/product";
+import {
+  UPLOAD_KINDS,
+  UPLOAD_KIND_LABELS,
+  type UploadKind,
+} from "@/lib/product/backend-dto";
 import { SecureWorkspaceAction, UnavailableHere } from "@/components/product/handoff";
 
 export const Route = createFileRoute("/app/new")({
@@ -21,16 +26,23 @@ function NewAnalysis() {
   const [name, setName] = useState("");
   const [period, setPeriod] = useState("");
   const [kinds, setKinds] = useState<Array<DataSource["kind"]>>(["quickbooks"]);
-  const [files, setFiles] = useState<string[]>([]);
+  const [uploads, setUploads] = useState<Array<{ file: File; kind: UploadKind }>>([]);
 
   const create = useMutation({
-    mutationFn: () =>
-      productApi.createAnalysis({
+    mutationFn: async () => {
+      const analysis = await productApi.createAnalysis({
         name,
         period,
         sourceKinds: kinds,
-        uploadedFileNames: files,
-      }),
+        uploadedFileNames: uploads.map((upload) => upload.file.name),
+      });
+      // The backend accepts exactly one file plus its kind per request, so each
+      // selected file is uploaded sequentially and the analysis is re-read after.
+      if (uploads.length > 0 && can("upload_files") && productApi.uploadAnalysisFiles) {
+        return productApi.uploadAnalysisFiles(analysis.id, uploads);
+      }
+      return analysis;
+    },
     onSuccess: async (analysis) => {
       analytics.track("core_workflow_started", {
         workflowId: analysis.id,
@@ -140,16 +152,47 @@ function NewAnalysis() {
                   multiple
                   accept=".csv,.xlsx,.pdf"
                   onChange={(e) =>
-                    setFiles(Array.from(e.target.files ?? []).map((file) => file.name))
+                    setUploads(
+                      Array.from(e.target.files ?? []).map((file) => ({
+                        file,
+                        kind: "invoice_export" as UploadKind,
+                      })),
+                    )
                   }
                 />
                 <p className="text-xs text-muted-foreground">
-                  Files are processed by the backend; contents never reach analytics.
+                  Each file is uploaded with its record type so the backend parses it correctly.
+                  Contents never reach analytics.
                 </p>
-                {files.length > 0 ? (
-                  <ul className="num mt-2 space-y-1 text-xs text-muted-foreground">
-                    {files.map((file) => (
-                      <li key={file}>{file}</li>
+                {uploads.length > 0 ? (
+                  <ul className="mt-2 space-y-2 text-xs">
+                    {uploads.map((upload, index) => (
+                      <li key={upload.file.name} className="flex flex-wrap items-center gap-2">
+                        <span className="num text-muted-foreground">{upload.file.name}</span>
+                        <label className="ml-auto flex items-center gap-1.5">
+                          <span className="text-muted-foreground">Record type</span>
+                          <select
+                            aria-label={`Record type for ${upload.file.name}`}
+                            className="border border-input bg-background px-2 py-1 text-xs"
+                            value={upload.kind}
+                            onChange={(event) =>
+                              setUploads((current) =>
+                                current.map((item, itemIndex) =>
+                                  itemIndex === index
+                                    ? { ...item, kind: event.target.value as UploadKind }
+                                    : item,
+                                ),
+                              )
+                            }
+                          >
+                            {UPLOAD_KINDS.map((kind) => (
+                              <option key={kind} value={kind}>
+                                {UPLOAD_KIND_LABELS[kind]}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </li>
                     ))}
                   </ul>
                 ) : null}
