@@ -10,33 +10,247 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/app'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as IntegrationsRouteImport } from './routes/integrations'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as SecurityRouteImport } from './routes/security'
+import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as StartRouteImport } from './routes/start'
+import { Route as WorkflowRouteImport } from './routes/workflow'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppBillingRouteImport } from './routes/app.billing'
+import { Route as AppHelpRouteImport } from './routes/app.help'
+import { Route as AppHistoryRouteImport } from './routes/app.history'
+import { Route as AppNewRouteImport } from './routes/app.new'
+import { Route as AppOpsRouteImport } from './routes/app.ops'
+import { Route as AppSettingsRouteImport } from './routes/app.settings'
+import { Route as AppAnalysesAnalysisIdRouteImport } from './routes/app.analyses.$analysisId'
+import { Route as AppFindingsFindingIdRouteImport } from './routes/app.findings.$findingId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IntegrationsRoute = IntegrationsRouteImport.update({
+  id: '/integrations',
+  path: '/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SecurityRoute = SecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StartRoute = StartRouteImport.update({
+  id: '/start',
+  path: '/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkflowRoute = WorkflowRouteImport.update({
+  id: '/workflow',
+  path: '/workflow',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBillingRoute = AppBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHelpRoute = AppHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHistoryRoute = AppHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNewRoute = AppNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOpsRoute = AppOpsRouteImport.update({
+  id: '/ops',
+  path: '/ops',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAnalysesAnalysisIdRoute = AppAnalysesAnalysisIdRouteImport.update({
+  id: '/analyses/$analysisId',
+  path: '/analyses/$analysisId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFindingsFindingIdRoute = AppFindingsFindingIdRouteImport.update({
+  id: '/findings/$findingId',
+  path: '/findings/$findingId',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
+  '/faq': typeof FaqRoute
+  '/integrations': typeof IntegrationsRoute
+  '/pricing': typeof PricingRoute
+  '/security': typeof SecurityRoute
+  '/sign-in': typeof SignInRoute
+  '/start': typeof StartRoute
+  '/workflow': typeof WorkflowRoute
+  '/app/billing': typeof AppBillingRoute
+  '/app/help': typeof AppHelpRoute
+  '/app/history': typeof AppHistoryRoute
+  '/app/new': typeof AppNewRoute
+  '/app/ops': typeof AppOpsRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/': typeof AppIndexRoute
+  '/app/analyses/$analysisId': typeof AppAnalysesAnalysisIdRoute
+  '/app/findings/$findingId': typeof AppFindingsFindingIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/faq': typeof FaqRoute
+  '/integrations': typeof IntegrationsRoute
+  '/pricing': typeof PricingRoute
+  '/security': typeof SecurityRoute
+  '/sign-in': typeof SignInRoute
+  '/start': typeof StartRoute
+  '/workflow': typeof WorkflowRoute
+  '/app/billing': typeof AppBillingRoute
+  '/app/help': typeof AppHelpRoute
+  '/app/history': typeof AppHistoryRoute
+  '/app/new': typeof AppNewRoute
+  '/app/ops': typeof AppOpsRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app': typeof AppIndexRoute
+  '/app/analyses/$analysisId': typeof AppAnalysesAnalysisIdRoute
+  '/app/findings/$findingId': typeof AppFindingsFindingIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
+  '/faq': typeof FaqRoute
+  '/integrations': typeof IntegrationsRoute
+  '/pricing': typeof PricingRoute
+  '/security': typeof SecurityRoute
+  '/sign-in': typeof SignInRoute
+  '/start': typeof StartRoute
+  '/workflow': typeof WorkflowRoute
+  '/app/billing': typeof AppBillingRoute
+  '/app/help': typeof AppHelpRoute
+  '/app/history': typeof AppHistoryRoute
+  '/app/new': typeof AppNewRoute
+  '/app/ops': typeof AppOpsRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/': typeof AppIndexRoute
+  '/app/analyses/$analysisId': typeof AppAnalysesAnalysisIdRoute
+  '/app/findings/$findingId': typeof AppFindingsFindingIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/faq'
+    | '/integrations'
+    | '/pricing'
+    | '/security'
+    | '/sign-in'
+    | '/start'
+    | '/workflow'
+    | '/app/billing'
+    | '/app/help'
+    | '/app/history'
+    | '/app/new'
+    | '/app/ops'
+    | '/app/settings'
+    | '/app/'
+    | '/app/analyses/$analysisId'
+    | '/app/findings/$findingId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/faq'
+    | '/integrations'
+    | '/pricing'
+    | '/security'
+    | '/sign-in'
+    | '/start'
+    | '/workflow'
+    | '/app/billing'
+    | '/app/help'
+    | '/app/history'
+    | '/app/new'
+    | '/app/ops'
+    | '/app/settings'
+    | '/app'
+    | '/app/analyses/$analysisId'
+    | '/app/findings/$findingId'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/faq'
+    | '/integrations'
+    | '/pricing'
+    | '/security'
+    | '/sign-in'
+    | '/start'
+    | '/workflow'
+    | '/app/billing'
+    | '/app/help'
+    | '/app/history'
+    | '/app/new'
+    | '/app/ops'
+    | '/app/settings'
+    | '/app/'
+    | '/app/analyses/$analysisId'
+    | '/app/findings/$findingId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  FaqRoute: typeof FaqRoute
+  IntegrationsRoute: typeof IntegrationsRoute
+  PricingRoute: typeof PricingRoute
+  SecurityRoute: typeof SecurityRoute
+  SignInRoute: typeof SignInRoute
+  StartRoute: typeof StartRoute
+  WorkflowRoute: typeof WorkflowRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +262,164 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/integrations': {
+      id: '/integrations'
+      path: '/integrations'
+      fullPath: '/integrations'
+      preLoaderRoute: typeof IntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/security': {
+      id: '/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof SecurityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/start': {
+      id: '/start'
+      path: '/start'
+      fullPath: '/start'
+      preLoaderRoute: typeof StartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflow': {
+      id: '/workflow'
+      path: '/workflow'
+      fullPath: '/workflow'
+      preLoaderRoute: typeof WorkflowRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/billing': {
+      id: '/app/billing'
+      path: '/billing'
+      fullPath: '/app/billing'
+      preLoaderRoute: typeof AppBillingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/help': {
+      id: '/app/help'
+      path: '/help'
+      fullPath: '/app/help'
+      preLoaderRoute: typeof AppHelpRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/history': {
+      id: '/app/history'
+      path: '/history'
+      fullPath: '/app/history'
+      preLoaderRoute: typeof AppHistoryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/new': {
+      id: '/app/new'
+      path: '/new'
+      fullPath: '/app/new'
+      preLoaderRoute: typeof AppNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/ops': {
+      id: '/app/ops'
+      path: '/ops'
+      fullPath: '/app/ops'
+      preLoaderRoute: typeof AppOpsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/analyses/$analysisId': {
+      id: '/app/analyses/$analysisId'
+      path: '/analyses/$analysisId'
+      fullPath: '/app/analyses/$analysisId'
+      preLoaderRoute: typeof AppAnalysesAnalysisIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/findings/$findingId': {
+      id: '/app/findings/$findingId'
+      path: '/findings/$findingId'
+      fullPath: '/app/findings/$findingId'
+      preLoaderRoute: typeof AppFindingsFindingIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppBillingRoute: typeof AppBillingRoute
+  AppHelpRoute: typeof AppHelpRoute
+  AppHistoryRoute: typeof AppHistoryRoute
+  AppNewRoute: typeof AppNewRoute
+  AppOpsRoute: typeof AppOpsRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppAnalysesAnalysisIdRoute: typeof AppAnalysesAnalysisIdRoute
+  AppFindingsFindingIdRoute: typeof AppFindingsFindingIdRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppBillingRoute: AppBillingRoute,
+  AppHelpRoute: AppHelpRoute,
+  AppHistoryRoute: AppHistoryRoute,
+  AppNewRoute: AppNewRoute,
+  AppOpsRoute: AppOpsRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppAnalysesAnalysisIdRoute: AppAnalysesAnalysisIdRoute,
+  AppFindingsFindingIdRoute: AppFindingsFindingIdRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  FaqRoute: FaqRoute,
+  IntegrationsRoute: IntegrationsRoute,
+  PricingRoute: PricingRoute,
+  SecurityRoute: SecurityRoute,
+  SignInRoute: SignInRoute,
+  StartRoute: StartRoute,
+  WorkflowRoute: WorkflowRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
