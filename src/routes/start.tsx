@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { MarketingShell, PageHeader } from "@/components/product/marketing-shell";
 import { ErrorState, SuccessNote } from "@/components/product/states";
 import { analytics } from "@/lib/analytics";
-import { productApi } from "@/lib/product";
+import { can, isSecureLinkMode, productApi } from "@/lib/product";
+import { SecureWorkspaceAction, UnavailableHere } from "@/components/product/handoff";
 
 const searchSchema = z.object({ plan: z.string().optional() });
 
