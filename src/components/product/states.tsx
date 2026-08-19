@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { AlertTriangle, Inbox, Loader2, Lock } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { DEMO_BANNER, isDemoMode } from "@/lib/product";
+import { MODE_BANNER } from "@/lib/product";
 
 export function LoadingState({ label = "Loading" }: { label?: string }) {
   return (
@@ -95,10 +95,10 @@ export function SuccessNote({ children }: { children: ReactNode }) {
 }
 
 export function DemoModeBanner() {
-  if (!isDemoMode) return null;
+  if (!MODE_BANNER) return null;
   return (
     <div className="border-b border-border bg-[var(--status-open-surface)] px-4 py-1.5 text-center text-xs font-medium text-[var(--status-open)]">
-      {DEMO_BANNER}
+      {MODE_BANNER}
     </div>
   );
 }
