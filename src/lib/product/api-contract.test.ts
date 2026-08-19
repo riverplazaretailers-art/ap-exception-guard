@@ -3,6 +3,7 @@ import { createApiProductApi } from "./api-adapter";
 import {
   mapFinding,
   mapPilotDetail,
+  mapPilotRow,
   mapQuickBooksStatus,
   type FindingDto,
   type PilotDetailEnvelope,
@@ -279,6 +280,44 @@ describe("finding mapping", () => {
     });
     expect(states).not.toContain("assigned");
     expect(states).not.toContain("dismissed");
+  });
+});
+
+describe("active pilot status", () => {
+  it("maps a new active pilot with no files to draft", () => {
+    expect(mapPilotRow({ ...pilotRow, status: "active", file_count: 0, open_count: 0 }).status).toBe(
+      "draft",
+    );
+  });
+
+  it("maps a processed active pilot with files to ready", () => {
+    expect(mapPilotRow({ ...pilotRow, status: "active", file_count: 3 }).status).toBe("ready");
+  });
+
+  it("preserves explicit processing and failed mappings", () => {
+    expect(mapPilotRow({ ...pilotRow, status: "processing", file_count: 0 }).status).toBe(
+      "ingesting",
+    );
+    expect(mapPilotRow({ ...pilotRow, status: "failed", file_count: 3 }).status).toBe("failed");
+  });
+
+  it("maps an active detail envelope with records, files and findings to ready", () => {
+    const result = mapPilotDetail({
+      ...detailEnvelope,
+      pilot: { ...pilotRow, status: "active", file_count: 0 },
+    });
+    expect(result.analysis.status).toBe("ready");
+  });
+
+  it("maps an empty active detail envelope to draft without an invented async state", () => {
+    const result = mapPilotDetail({
+      pilot: { ...pilotRow, status: "active", file_count: 0, open_count: 0 },
+      files: [],
+      records: [],
+      connections: [],
+      findings: [],
+    });
+    expect(result.analysis.status).toBe("draft");
   });
 });
 

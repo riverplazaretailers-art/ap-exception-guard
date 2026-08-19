@@ -6,8 +6,10 @@
  * shell is NOT directly connected to it yet, so modes are explicit and fail closed:
  *
  * - demo         default. Visibly synthetic records only. No network calls.
- * - secure-link  VITE_SECURE_WORKSPACE_URL is set. Real work is handed off to the
- *                preserved secure sign-in workspace; the shell still shows demo data.
+ * - secure-link  VITE_SECURE_WORKSPACE_URL is set. Every real action is handed off to
+ *                the preserved secure sign-in workspace. Authenticated data
+ *                capabilities are OFF: this shell exposes no analyses, findings or
+ *                evidence at all — synthetic or otherwise.
  * - api          VITE_API_BASE_URL *and* VITE_API_CONTRACT_VERSION=v1 are both set.
  *                Future typed gateway against the real /api routes. Partial or
  *                mismatched configuration never silently downgrades to guessing.

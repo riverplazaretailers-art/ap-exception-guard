@@ -144,8 +144,19 @@ const ANALYSIS_STATUS: Record<string, AnalysisStatus> = {
   error: "failed",
 };
 
-export function mapAnalysisStatus(raw: string): AnalysisStatus {
-  return ANALYSIS_STATUS[raw.trim().toLowerCase()] ?? "draft";
+/**
+ * The backend stores `active` for both a freshly created pilot and one that has
+ * already been ingested and reconciled, so `active` carries no progress on its
+ * own. `hasIngestedData` supplies the observable evidence (files, records or
+ * findings) that ingestion actually completed. Ingestion is synchronous in the
+ * preserved service, so no intermediate asynchronous state is invented.
+ */
+export function mapAnalysisStatus(raw: string, hasIngestedData = false): AnalysisStatus {
+  const value = raw.trim().toLowerCase();
+  const explicit = ANALYSIS_STATUS[value];
+  if (explicit) return explicit;
+  if (value === "active") return hasIngestedData ? "ready" : "draft";
+  return "draft";
 }
 
 /** Explicit backend finding-type vocabulary. Unknown types are NOT guessed. */
@@ -284,11 +295,13 @@ function mapFileSource(dto: PilotFileDto): DataSource {
 /** List rows only carry counters — no sources, no exposure figure. */
 export function mapPilotRow(dto: PilotRowDto): Analysis {
   const open = dto.open_count ?? 0;
+  // A list row only proves ingestion through its file counter.
+  const hasIngestedData = (dto.file_count ?? 0) > 0;
   return {
     id: dto.id,
     name: dto.company,
     period: UNKNOWN_PERIOD,
-    status: mapAnalysisStatus(dto.status),
+    status: mapAnalysisStatus(dto.status, hasIngestedData),
     createdAt: dto.created_at,
     sources: [],
     documentsProcessed: dto.file_count ?? 0,
@@ -315,10 +328,14 @@ export function mapPilotDetail(envelope: PilotDetailEnvelope): {
 
   const openFindings = findings.filter((finding) => finding.state === "open");
   const recordCount = records.reduce((sum, row) => sum + (row.count ?? 0), 0);
+  // The detail envelope shows ingestion directly: parsed records, stored files
+  // or findings produced by the synchronous reconciliation pass.
+  const hasIngestedData = recordCount > 0 || files.length > 0 || findings.length > 0;
 
   return {
     analysis: {
       ...base,
+      status: mapAnalysisStatus(envelope.pilot.status, hasIngestedData),
       sources: [...connections.map(mapConnectionSource), ...files.map(mapFileSource)],
       documentsProcessed: recordCount || files.length,
       findingsOpen: openFindings.length,
