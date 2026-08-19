@@ -9,7 +9,8 @@ import { AppShell } from "@/components/product/app-shell";
 import { ErrorState } from "@/components/product/states";
 import { IntegrationStatusBadge } from "@/components/product/status-badge";
 import { analytics } from "@/lib/analytics";
-import { productApi, type DataSource } from "@/lib/product";
+import { can, isSecureLinkMode, productApi, type DataSource } from "@/lib/product";
+import { SecureWorkspaceAction, UnavailableHere } from "@/components/product/handoff";
 
 export const Route = createFileRoute("/app/new")({
   component: NewAnalysis,
@@ -50,6 +51,18 @@ function NewAnalysis() {
       title="New analysis"
       description="Name the period, attach the records, then hand it to the reconciliation engine. Matching rules run on the backend."
     >
+      {!can("create_analysis") ? (
+        <div className="max-w-2xl">
+          <UnavailableHere
+            title="New analyses are created in the secure workspace"
+            action={<SecureWorkspaceAction path="/pilots/new" label="Open secure workspace" />}
+          >
+            {isSecureLinkMode
+              ? "Connecting QuickBooks Online and uploading AP records happens in the preserved AP Exception Desk workspace, which owns file processing, evidence storage and audit events."
+              : "This environment cannot create real analyses. Configure the secure workspace URL to hand off, or the API gateway to enable it here."}
+          </UnavailableHere>
+        </div>
+      ) : (
       <form
         className="max-w-2xl space-y-6"
         onSubmit={(event) => {
@@ -161,6 +174,7 @@ function NewAnalysis() {
           </Button>
         </div>
       </form>
+      )}
     </AppShell>
   );
 }
