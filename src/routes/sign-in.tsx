@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { MarketingShell } from "@/components/product/marketing-shell";
 import { ErrorState } from "@/components/product/states";
 import { useSession } from "@/components/product/session";
-import { can, isDemoMode, isSecureLinkMode } from "@/lib/product";
+import { can, isDemoMode, isSecureLinkMode, showsDemoData } from "@/lib/product";
 import { SecureWorkspaceAction, UnavailableHere } from "@/components/product/handoff";
 
 export const Route = createFileRoute("/sign-in")({
@@ -84,11 +84,17 @@ function SignInPage() {
         <p className="mt-2 text-sm text-muted-foreground">
           For controllers, AP managers and finance partners with an active account.
         </p>
-        {isDemoMode ? (
+        {showsDemoData ? (
           <p className="mt-4 border-l-2 border-primary bg-accent px-3 py-2 text-xs text-accent-foreground">
-            Demo mode: any work email signs you into a synthetic account. No real credentials are
-            accepted or stored.
+            {isSecureLinkMode
+              ? "Preview only: this form opens a synthetic account so you can walk the workflow. Real credentials belong in the secure AP Exception Desk workspace."
+              : "Demo mode: any work email signs you into a synthetic account. No real credentials are accepted or stored."}
           </p>
+        ) : null}
+        {isSecureLinkMode ? (
+          <div className="mt-4">
+            <SecureWorkspaceAction path="/sign-in" label="Sign in to the secure workspace" />
+          </div>
         ) : null}
         <form onSubmit={onSubmit} className="panel mt-6 space-y-4 p-5">
           <div className="space-y-1.5">
