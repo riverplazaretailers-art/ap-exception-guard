@@ -94,6 +94,18 @@ function SettingsPage() {
               ))}
             </ul>
           ) : null}
+          {productMode === "api" ? (
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+              <li>
+                The v1 contract records a finding as open or resolved with an assignee. Dismissal,
+                resolution notes and per-finding audit history are not exposed here.
+              </li>
+              <li>
+                Reconciliation runs are triggered by the preserved service, not from this shell.
+              </li>
+              <li>Sign-in and access requests stay with the secure workspace.</li>
+            </ul>
+          ) : null}
           <p className="mt-3 text-xs text-muted-foreground">
             This shell is not directly connected to the AP Exception Desk backend. Reconciliation,
             QuickBooks OAuth, file processing, evidence and audit events stay with the preserved

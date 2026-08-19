@@ -31,7 +31,7 @@ mode + capabilities  (src/lib/product/config.ts)
 | Mode | Trigger | Behaviour |
 | --- | --- | --- |
 | `demo` | default (nothing configured) | Visibly synthetic records, no network calls, every screen reviewable. |
-| `secure-link` | `VITE_SECURE_WORKSPACE_URL` set | Sign-in, request-access, connect and upload CTAs for real work open the preserved secure workspace. Displayed records stay synthetic and are labeled as a preview. |
+| `secure-link` | `VITE_SECURE_WORKSPACE_URL` set | Sign-in, request-access, connect and upload CTAs open the preserved secure workspace. Authenticated data capabilities are **off**: `/app` and all protected data routes hand off instead of showing synthetic records as customer data. |
 | `api` | `VITE_API_BASE_URL` **and** `VITE_API_CONTRACT_VERSION=v1` | Typed gateway against the routes below. |
 
 Fail-closed rules (`resolveProductConfig`):
@@ -43,33 +43,63 @@ Fail-closed rules (`resolveProductConfig`):
 - Capabilities are typed (`src/lib/product/config.ts`). Actions the current mode cannot
   perform are hidden or replaced with a secure-workspace handoff — never left to fail.
 
-## API integration (existing backend routes)
+## API integration (authoritative v1 contract)
 
-The `api` adapter calls only routes the preserved backend actually exposes, with
-credentialed session cookies:
+The `api` adapter calls only the routes the preserved backend exposes, with credentialed
+session cookies. Backend DTOs (snake_case, dollar amounts) are declared in
+`src/lib/product/backend-dto.ts` and converted by pure mapping functions — no accounting
+decision is made in React.
 
-| ProductApi method | Request |
-| --- | --- |
-| `listAnalyses` | `GET /api/pilots` |
-| `createAnalysis` | `POST /api/pilots` |
-| `getAnalysis` / `listFindings` | `GET /api/pilots/:id` (findings filtered client-side for display only) |
-| `uploadAnalysisFiles` | `POST /api/pilots/:id/files` (multipart) |
-| `assignFinding` / `resolveFinding` / `dismissFinding` | `PATCH /api/findings/:id` |
-| `getQuickBooksStatus` | `GET /api/integrations/quickbooks/status?pilotId=` |
-| `getQuickBooksStartUrl` | `GET /api/integrations/quickbooks/start?pilotId=` |
-| `syncQuickBooks` | `POST /api/integrations/quickbooks/sync` |
+| ProductApi method | Request | Response envelope |
+| --- | --- | --- |
+| `listAnalyses` | `GET /api/pilots` | `{ pilots: PilotRow[] }` |
+| `createAnalysis` | `POST /api/pilots` with exactly `{ company }` | `{ pilot }` |
+| `getAnalysis` / `listFindings` / `getFinding` | `GET /api/pilots/:id` | `{ pilot, files, records, connections, findings }` |
+| `uploadAnalysisFiles` | `POST /api/pilots/:id/files`, multipart, **one `file` + one `kind` per request**, sent sequentially, then the analysis is re-read | `{ file, recordsCreated, findingsCreated }` |
+| `assignFinding` | `PATCH /api/findings/:id` `{ status: "open", assigned_to }` | `{ ok, status, assigned_to }` |
+| `resolveFinding` | `PATCH /api/findings/:id` `{ status: "resolved", assigned_to: <current or ""> }`, then re-read the pilot | `{ ok, status, assigned_to }` |
+| `getQuickBooksStatus` | `GET /api/integrations/quickbooks/status?pilotId=` | `{ configured, connection }` |
+| `getQuickBooksStartUrl` | `GET /api/integrations/quickbooks/start?pilotId=` | backend-owned OAuth redirect |
+| `syncQuickBooks` | `POST /api/integrations/quickbooks/sync` `{ pilotId }`, then refetch pilot + QBO status | `{ records, findings }` |
 
-Not exposed by the backend contract, and therefore rejected with
-`ProductApiError("unsupported")` rather than guessed: sign-in/sign-out/session,
-access requests, reconcile triggers, single-finding fetch, pricing plans and operational
-job history. Authentication remains the secure workspace's responsibility.
+Accepted upload kinds: `invoice_export`, `purchase_orders`, `receipts`, `vendor_statement`,
+`supporting_pdf`. The multipart field names are exactly `file` and `kind`; a `files` field
+is never sent.
+
+Mapping rules (`backend-dto.ts`):
+
+- Finding types are mapped explicitly — `Possible duplicate` → `duplicate`;
+  `Missing purchase order` / `Purchase order not found` / `PO amount mismatch` →
+  `missing_po`; `Receipt not found` / `Receipt mismatch` → `receipt_mismatch`;
+  `Statement invoice missing` → `missing_statement_invoice`; `Aged approval` →
+  `aged_approval`. Unknown types, statuses or severities are reported as unmapped rather
+  than guessed.
+- `amount` (dollars) → `amountCents` via `Math.round(amount * 100)`; `High`/`Medium`/`Low`
+  → lowercase severity; `summary` → `rationale`, `question` → `question`, `evidence` →
+  `evidenceNote` (text only — no document URL is invented).
+- QuickBooks is `connected` only when `connection.status === "connected"`; `realm_id` →
+  `realmLabel`, `updated_at` → `lastSyncAt`, and `configured: false` produces an explicit
+  configuration message.
+
+### Auth and gateway constraint
+
+These routes sit behind the backend's own secure sign-in workspace. This shell has no
+session surface of its own: it sends `credentials: "include"` and depends on an existing
+backend session, so **api mode is a typed future gateway, not a claimed live
+integration**. Sign-in, sign-out, session, access requests, reconcile triggers, pricing
+plans and operational job history are rejected with `ProductApiError("unsupported")`.
+
+### Backend limits surfaced in the UI
+
+The v1 contract cannot persist a resolution note, an `assigned` state, or a `dismissed`
+state, and exposes no per-finding document URLs or audit trail. In `api` mode the
+matching capabilities (`finding_dismiss`, `resolution_notes`, `finding_audit_history`,
+`evidence_documents`) are **false**, so those controls are hidden and the screens say where
+the record actually lives.
 
 Errors map to `ProductApiError` codes (`unauthorized`, `forbidden`, `not_found`, `server`,
 `network`, `unsupported`, `not_configured`) which drive the loading / empty / error /
 permission-denied states.
-
-Evidence is opened through short-lived backend-signed URLs; document bodies never pass
-through this frontend.
 
 ## Integration status
 

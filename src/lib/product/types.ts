@@ -6,6 +6,8 @@
  * No accounting or matching decision may be reproduced in UI components.
  */
 
+import type { UploadKind } from "./backend-dto";
+
 export type IntegrationStatus = "live" | "pilot" | "planned";
 
 export type AnalysisStatus =
@@ -90,6 +92,10 @@ export interface Finding {
   assignee?: string;
   /** Backend-authored explanation of the rule that fired. */
   rationale: string;
+  /** Backend-authored review question, when the backend supplies one. */
+  question?: string;
+  /** Free-form backend evidence text. Never a document body or URL. */
+  evidenceNote?: string;
   evidence: EvidenceRef[];
   audit: AuditEntry[];
 }
@@ -159,6 +165,20 @@ export class ProductApiError extends Error {
   }
 }
 
+export interface QuickBooksSyncOutcome {
+  /** Counts reported by POST /api/integrations/quickbooks/sync. */
+  records: number;
+  findings: number;
+  /** Authoritative state re-read after the sync. */
+  analysis: Analysis;
+  status: QuickBooksConnectionStatus;
+}
+
+export interface AnalysisFileUpload {
+  file: File;
+  kind: UploadKind;
+}
+
 export interface QuickBooksConnectionStatus {
   connected: boolean;
   realmLabel?: string;
@@ -182,17 +202,22 @@ export interface ProductApi {
   reconcileAnalysis(id: string): Promise<Analysis>;
 
   listFindings(query: FindingQuery): Promise<Finding[]>;
-  getFinding(id: string): Promise<Finding>;
-  assignFinding(id: string, assignee: string): Promise<Finding>;
-  resolveFinding(id: string, note: string): Promise<Finding>;
-  dismissFinding(id: string, note: string): Promise<Finding>;
+  getFinding(id: string, analysisId?: string): Promise<Finding>;
+  /** analysisId scopes the call for backends without a single-finding route. */
+  assignFinding(id: string, assignee: string, analysisId?: string): Promise<Finding>;
+  /** `note` is only retained by backends that support resolution notes. */
+  resolveFinding(id: string, note: string, analysisId?: string): Promise<Finding>;
+  dismissFinding(id: string, note: string, analysisId?: string): Promise<Finding>;
 
-  /** Multipart upload handled by the backend (POST /api/pilots/:id/files). */
-  uploadAnalysisFiles?(id: string, files: File[]): Promise<Analysis>;
+  /**
+   * Multipart upload (POST /api/pilots/:id/files). The backend accepts exactly
+   * one "file" plus one "kind" per request, so multiple uploads are sequential.
+   */
+  uploadAnalysisFiles?(id: string, uploads: AnalysisFileUpload[]): Promise<Analysis>;
   getQuickBooksStatus?(analysisId: string): Promise<QuickBooksConnectionStatus>;
   /** Backend-owned OAuth entry point. Returned as a URL to navigate to. */
   getQuickBooksStartUrl?(analysisId: string): string;
-  syncQuickBooks?(analysisId: string): Promise<QuickBooksConnectionStatus>;
+  syncQuickBooks?(analysisId: string): Promise<QuickBooksSyncOutcome>;
 
   listIntegrations(): Promise<Integration[]>;
   listPricingPlans(): Promise<PricingPlan[]>;
