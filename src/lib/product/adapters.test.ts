@@ -112,7 +112,7 @@ describe("demo adapter", () => {
     const integrations = await api.listIntegrations();
     const live = integrations.filter((i) => i.status === "live").map((i) => i.id);
     expect(live).toContain("quickbooks");
-    expect(live).toContain("csv_upload");
+    expect(live).toContain("csv");
   });
 
   it("reports operational jobs including failures", async () => {
