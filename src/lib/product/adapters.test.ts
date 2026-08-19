@@ -1,23 +1,27 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createDemoProductApi } from "./demo-adapter";
-import { createHttpProductApi } from "./http-adapter";
-import { resolveProductApi } from "./index";
+import { createApiProductApi } from "./api-adapter";
+import { createProductApi } from "./index";
+import { resolveProductConfig } from "./config";
 import { ProductApiError, type ProductApi } from "./types";
 import { allowedFindingActions, nextAnalysisStatus, stepForStatus } from "./workflow";
 import { scrubPayload } from "@/lib/analytics";
 
 describe("adapter resolution", () => {
-  it("uses the demo adapter when no base URL is configured", () => {
-    expect(resolveProductApi(undefined).mode).toBe("demo");
+  it("uses the demo adapter when nothing is configured", () => {
+    expect(createProductApi(resolveProductConfig({})).mode).toBe("demo");
   });
 
-  it("uses the HTTP adapter when a base URL is configured", () => {
-    expect(resolveProductApi("https://api.example.test").mode).toBe("http");
+  it("uses the API adapter when the base URL and contract version agree", () => {
+    const config = resolveProductConfig({
+      VITE_API_BASE_URL: "https://api.example.test",
+      VITE_API_CONTRACT_VERSION: "v1",
+    });
+    expect(createProductApi(config).mode).toBe("api");
   });
 
-  it("builds an HTTP adapter without touching the network at construction time", () => {
-    const api = createHttpProductApi("https://api.example.test");
-    expect(api.mode).toBe("http");
+  it("builds an API adapter without touching the network at construction time", () => {
+    expect(createApiProductApi("https://api.example.test").mode).toBe("api");
   });
 });
 
