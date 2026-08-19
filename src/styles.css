@@ -19,6 +19,9 @@
  */
 
 @theme inline {
+  --font-sans:
+    "Inter Tight", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -59,42 +62,56 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
+  --radius: 0.375rem;
+  --background: oklch(0.985 0.002 300);
+  --foreground: oklch(0.185 0.012 300);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
+  --card-foreground: oklch(0.185 0.012 300);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --popover-foreground: oklch(0.185 0.012 300);
+  --primary: oklch(0.38 0.088 335);
+  --primary-foreground: oklch(0.985 0.004 330);
+  --secondary: oklch(0.955 0.005 300);
+  --secondary-foreground: oklch(0.26 0.02 320);
+  --muted: oklch(0.955 0.005 300);
+  --muted-foreground: oklch(0.5 0.014 300);
+  --accent: oklch(0.945 0.018 335);
+  --accent-foreground: oklch(0.32 0.075 335);
+  --destructive: oklch(0.52 0.19 25);
+  --destructive-foreground: oklch(0.985 0.003 60);
+  --border: oklch(0.9 0.006 300);
+  --input: oklch(0.9 0.006 300);
+  --ring: oklch(0.38 0.088 335);
+  --surface-raised: oklch(1 0 0);
+  --surface-sunken: oklch(0.965 0.004 300);
+  --status-open: oklch(0.55 0.16 45);
+  --status-open-surface: oklch(0.965 0.03 60);
+  --status-assigned: oklch(0.45 0.09 250);
+  --status-assigned-surface: oklch(0.96 0.02 250);
+  --status-resolved: oklch(0.44 0.1 155);
+  --status-resolved-surface: oklch(0.96 0.03 160);
+  --status-dismissed: oklch(0.5 0.012 300);
+  --status-dismissed-surface: oklch(0.955 0.004 300);
+  --status-failed: oklch(0.5 0.18 25);
+  --status-failed-surface: oklch(0.965 0.03 25);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
+  --sidebar-foreground: oklch(0.185 0.012 300);
+  --sidebar-primary: oklch(0.38 0.088 335);
   --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --sidebar-accent: oklch(0.945 0.018 335);
+  --sidebar-accent-foreground: oklch(0.32 0.075 335);
+  --sidebar-border: oklch(0.9 0.006 300);
+  --sidebar-ring: oklch(0.38 0.088 335);
 }
 
 .dark {
@@ -140,5 +157,37 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
   }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.015em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@utility panel {
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+@utility eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
 }
