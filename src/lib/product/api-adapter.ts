@@ -34,11 +34,16 @@ interface PilotDetail extends Analysis {
   findings?: Finding[];
 }
 
-function unsupported(what: string): never {
-  throw new ProductApiError(
+function unsupportedError(what: string): ProductApiError {
+  return new ProductApiError(
     `${what} is not exposed by the AP Exception Desk backend contract. Use the secure workspace.`,
     "unsupported",
   );
+}
+
+/** Always a rejected promise so callers handle it as a normal API failure. */
+function unsupported<T>(what: string): Promise<T> {
+  return Promise.reject(unsupportedError(what));
 }
 
 export function createApiProductApi(baseUrl: string): ProductApi {
@@ -93,16 +98,16 @@ export function createApiProductApi(baseUrl: string): ProductApi {
   return {
     mode: "api",
 
-    signIn: () => unsupported("Sign-in"),
-    signOut: () => unsupported("Sign-out"),
+    signIn: () => unsupported<SessionUser>("Sign-in"),
+    signOut: () => unsupported<void>("Sign-out"),
     getSession: async () => null,
-    requestAccess: () => unsupported("Access requests"),
+    requestAccess: () => unsupported<void>("Access requests"),
 
     listAnalyses: () => request<Analysis[]>("/api/pilots"),
     getAnalysis: (id) => getPilot(id),
     createAnalysis: (input: CreateAnalysisInput) =>
       request<Analysis>("/api/pilots", { method: "POST", body: input }),
-    reconcileAnalysis: () => unsupported("Triggering reconciliation from this shell"),
+    reconcileAnalysis: () => unsupported<Analysis>("Triggering reconciliation from this shell"),
 
     uploadAnalysisFiles: (id, files) => {
       const form = new FormData();
@@ -122,7 +127,7 @@ export function createApiProductApi(baseUrl: string): ProductApi {
           (!query.state || finding.state === query.state),
       );
     },
-    getFinding: () => unsupported("Fetching a single finding"),
+    getFinding: () => unsupported<Finding>("Fetching a single finding"),
     assignFinding: (id, assignee) => patchFinding(id, { state: "assigned", assignee }),
     resolveFinding: (id, note) => patchFinding(id, { state: "resolved", note }),
     dismissFinding: (id, note) => patchFinding(id, { state: "dismissed", note }),
@@ -154,8 +159,8 @@ export function createApiProductApi(baseUrl: string): ProductApi {
           summary: "AP register, PO list, receipts and vendor statements.",
         },
       ]),
-    listPricingPlans: (): Promise<PricingPlan[]> => unsupported("Pricing plans"),
-    listOperationalJobs: (): Promise<OperationalJob[]> => unsupported("Operational job history"),
+    listPricingPlans: () => unsupported<PricingPlan[]>("Pricing plans"),
+    listOperationalJobs: () => unsupported<OperationalJob[]>("Operational job history"),
   };
 
   function patchFinding(
