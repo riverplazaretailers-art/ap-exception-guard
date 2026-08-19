@@ -71,8 +71,7 @@ function AnalysisDetail() {
           : undefined
       }
       actions={
-        analysis && analysis.status !== "reconciling" ? (
-          {can("reconcile") ? (
+        analysis && analysis.status !== "reconciling" && can("reconcile") ? (
           <Button onClick={() => reconcile.mutate()} disabled={reconcile.isPending}>
             {reconcile.isPending
               ? "Reconciling…"
