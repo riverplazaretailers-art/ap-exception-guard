@@ -10,7 +10,8 @@ import { AppShell } from "@/components/product/app-shell";
 import { FindingStateBadge, SeverityBadge } from "@/components/product/status-badge";
 import { ErrorState, LoadingState, SuccessNote } from "@/components/product/states";
 import { dateTime, usdExact } from "@/lib/format";
-import { productApi } from "@/lib/product";
+import { can, isSecureLinkMode, productApi } from "@/lib/product";
+import { SecureWorkspaceAction, UnavailableHere } from "@/components/product/handoff";
 import { CATEGORY_LABELS, allowedFindingActions } from "@/lib/product/workflow";
 
 export const Route = createFileRoute("/app/findings/$findingId")({
@@ -145,6 +146,24 @@ function FindingDetail() {
 
           <aside className="space-y-4 border border-border bg-surface-raised p-5 lg:h-fit">
             <p className="eyebrow">Disposition</p>
+            {!can("finding_disposition") ? (
+              <UnavailableHere
+                title="Dispositions are recorded in the secure workspace"
+                action={
+                  <SecureWorkspaceAction
+                    path="/findings"
+                    label="Open secure workspace"
+                    variant="outline"
+                    size="sm"
+                  />
+                }
+              >
+                {isSecureLinkMode
+                  ? "Assigning, resolving and dismissing findings writes to the preserved audit trail, so it happens in the secure AP Exception Desk workspace."
+                  : "This environment cannot record dispositions."}
+              </UnavailableHere>
+            ) : (
+            <>
             {done ? <SuccessNote>Finding {done === "assign" ? "assigned" : `${done}d`}.</SuccessNote> : null}
             {act.error ? (
               <ErrorState title="Action failed" message={(act.error as Error).message} />
@@ -205,6 +224,8 @@ function FindingDetail() {
                 trail stays intact.
               </p>
             ) : null}
+            </>
+            )}
           </aside>
         </div>
       ) : null}
