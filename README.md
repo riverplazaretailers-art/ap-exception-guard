@@ -8,20 +8,76 @@ month-end fire drills.
 
 This project is an independent product frontend. It owns presentation only. Reconciliation
 and matching rules, QuickBooks Online OAuth/sync, file processing, evidence storage,
-workflow state, auth and audit events remain with the existing AP Exception Desk backend
+workflow state, auth and audit events remain with the preserved AP Exception Desk backend
 (D1 / R2). No accounting decision is reproduced in a React component.
+
+**This shell is not directly connected to the preserved backend yet.** Authentication lives
+in the backend's own secure workspace, so real work is either demonstrated with synthetic
+records or handed off. Modes are explicit and fail closed.
 
 ```text
 routes / components        presentation only
         |
         v
 ProductApi  (src/lib/product/types.ts)      typed boundary
-        |-- http-adapter.ts   authoritative backend, VITE_API_BASE_URL
-        `-- demo-adapter.ts   SYNTHETIC records, clearly labeled, no backend
+        |-- api-adapter.ts    preserved backend routes, gated by mode "api"
+        `-- demo-adapter.ts   SYNTHETIC records, clearly labeled, no network
+
+mode + capabilities  (src/lib/product/config.ts)
 ```
 
-Adapter selection lives in `src/lib/product/index.ts`: with `VITE_API_BASE_URL` set the
-HTTP adapter is used; without it the demo adapter runs and a demo banner is shown.
+## Modes
+
+| Mode | Trigger | Behaviour |
+| --- | --- | --- |
+| `demo` | default (nothing configured) | Visibly synthetic records, no network calls, every screen reviewable. |
+| `secure-link` | `VITE_SECURE_WORKSPACE_URL` set | Sign-in, request-access, connect and upload CTAs for real work open the preserved secure workspace. Displayed records stay synthetic and are labeled as a preview. |
+| `api` | `VITE_API_BASE_URL` **and** `VITE_API_CONTRACT_VERSION=v1` | Typed gateway against the routes below. |
+
+Fail-closed rules (`resolveProductConfig`):
+
+- One of the two API variables missing, or a contract version other than `v1`, keeps API
+  mode **off** and records a warning shown in Settings. No speculative contract is called.
+- URLs must be absolute `https` (plain `http` only for `localhost`), with no embedded
+  credentials, query string or fragment. Unsafe values are ignored with a warning.
+- Capabilities are typed (`src/lib/product/config.ts`). Actions the current mode cannot
+  perform are hidden or replaced with a secure-workspace handoff — never left to fail.
+
+## API integration (existing backend routes)
+
+The `api` adapter calls only routes the preserved backend actually exposes, with
+credentialed session cookies:
+
+| ProductApi method | Request |
+| --- | --- |
+| `listAnalyses` | `GET /api/pilots` |
+| `createAnalysis` | `POST /api/pilots` |
+| `getAnalysis` / `listFindings` | `GET /api/pilots/:id` (findings filtered client-side for display only) |
+| `uploadAnalysisFiles` | `POST /api/pilots/:id/files` (multipart) |
+| `assignFinding` / `resolveFinding` / `dismissFinding` | `PATCH /api/findings/:id` |
+| `getQuickBooksStatus` | `GET /api/integrations/quickbooks/status?pilotId=` |
+| `getQuickBooksStartUrl` | `GET /api/integrations/quickbooks/start?pilotId=` |
+| `syncQuickBooks` | `POST /api/integrations/quickbooks/sync` |
+
+Not exposed by the backend contract, and therefore rejected with
+`ProductApiError("unsupported")` rather than guessed: sign-in/sign-out/session,
+access requests, reconcile triggers, single-finding fetch, pricing plans and operational
+job history. Authentication remains the secure workspace's responsibility.
+
+Errors map to `ProductApiError` codes (`unauthorized`, `forbidden`, `not_found`, `server`,
+`network`, `unsupported`, `not_configured`) which drive the loading / empty / error /
+permission-denied states.
+
+Evidence is opened through short-lived backend-signed URLs; document bodies never pass
+through this frontend.
+
+## Integration status
+
+- QuickBooks Online — **Live** in the preserved backend connection path only. Not claimed
+  as live from this shell.
+- CSV / export upload — **Live** in the preserved backend.
+
+No other integration is claimed.
 
 Provider-neutral interfaces:
 
@@ -32,33 +88,6 @@ Provider-neutral interfaces:
   or personal data leave the app.
 - `src/lib/billing.ts` — product, plan, account, MRR, usage, trial and payment state. No
   payment vendor SDK is referenced by workflow code.
-
-## API integration
-
-The HTTP adapter expects a JSON API with credentialed session cookies:
-
-| ProductApi method | Request |
-| --- | --- |
-| `signIn` / `signOut` / `getSession` | `POST /auth/sign-in`, `POST /auth/sign-out`, `GET /auth/session` |
-| `requestAccess` | `POST /access-requests` |
-| `listAnalyses` / `getAnalysis` / `createAnalysis` | `GET /analyses`, `GET /analyses/:id`, `POST /analyses` |
-| `reconcileAnalysis` | `POST /analyses/:id/reconcile` |
-| `listFindings` / `getFinding` | `GET /findings?analysisId=&category=&state=`, `GET /findings/:id` |
-| `assignFinding` / `resolveFinding` / `dismissFinding` | `POST /findings/:id/assign|resolve|dismiss` |
-| `listIntegrations` / `listPricingPlans` / `listOperationalJobs` | `GET /integrations`, `GET /pricing-plans`, `GET /ops/jobs` |
-
-Errors map to `ProductApiError` codes (`unauthorized`, `forbidden`, `not_found`, `server`,
-`network`) which drive the loading / empty / error / permission-denied states.
-
-Evidence is opened through short-lived backend-signed URLs; document bodies never pass
-through this frontend.
-
-## Integration status
-
-- QuickBooks Online — **Live** (existing backend read-only connection path)
-- CSV / export upload — **Live**
-
-No other integration is claimed.
 
 ## Environment
 
