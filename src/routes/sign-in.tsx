@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { MarketingShell } from "@/components/product/marketing-shell";
 import { ErrorState } from "@/components/product/states";
 import { useSession } from "@/components/product/session";
-import { isDemoMode } from "@/lib/product";
+import { can, isDemoMode, isSecureLinkMode, showsDemoData } from "@/lib/product";
+import { SecureWorkspaceAction, UnavailableHere } from "@/components/product/handoff";
 
 export const Route = createFileRoute("/sign-in")({
   head: () => ({
@@ -45,6 +46,37 @@ function SignInPage() {
     }
   }
 
+  if (!can("session_auth")) {
+    return (
+      <MarketingShell>
+        <section className="mx-auto max-w-xl px-4 py-16">
+          <h1 className="text-2xl font-semibold">Sign in</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            AP Exception Desk keeps authentication in its own secure workspace. This shell does not
+            hold credentials or sessions for real accounts.
+          </p>
+          <div className="mt-6">
+            <UnavailableHere
+              title="Sign-in happens in the secure workspace"
+              action={
+                <>
+                  <SecureWorkspaceAction path="/sign-in" label="Open secure workspace" />
+                  <Button asChild variant="outline">
+                    <Link to="/workflow">See the workflow</Link>
+                  </Button>
+                </>
+              }
+            >
+              {isSecureLinkMode
+                ? "Continue to the preserved AP Exception Desk workspace to sign in and work real analyses."
+                : "No secure workspace URL is configured for this environment, so no sign-in destination is available."}
+            </UnavailableHere>
+          </div>
+        </section>
+      </MarketingShell>
+    );
+  }
+
   return (
     <MarketingShell>
       <section className="mx-auto max-w-md px-4 py-16">
@@ -52,11 +84,17 @@ function SignInPage() {
         <p className="mt-2 text-sm text-muted-foreground">
           For controllers, AP managers and finance partners with an active account.
         </p>
-        {isDemoMode ? (
+        {showsDemoData ? (
           <p className="mt-4 border-l-2 border-primary bg-accent px-3 py-2 text-xs text-accent-foreground">
-            Demo mode: any work email signs you into a synthetic account. No real credentials are
-            accepted or stored.
+            {isSecureLinkMode
+              ? "Preview only: this form opens a synthetic account so you can walk the workflow. Real credentials belong in the secure AP Exception Desk workspace."
+              : "Demo mode: any work email signs you into a synthetic account. No real credentials are accepted or stored."}
           </p>
+        ) : null}
+        {isSecureLinkMode ? (
+          <div className="mt-4">
+            <SecureWorkspaceAction path="/sign-in" label="Sign in to the secure workspace" />
+          </div>
         ) : null}
         <form onSubmit={onSubmit} className="panel mt-6 space-y-4 p-5">
           <div className="space-y-1.5">

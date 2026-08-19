@@ -11,7 +11,7 @@ import {
 import { EmptyState, ErrorState, LoadingState, SuccessNote } from "@/components/product/states";
 import { analytics } from "@/lib/analytics";
 import { count, day, usd } from "@/lib/format";
-import { productApi, type FindingCategory, type FindingState } from "@/lib/product";
+import { can, productApi, type FindingCategory, type FindingState } from "@/lib/product";
 import { CATEGORY_LABELS, CATEGORY_ORDER, FINDING_STATE_LABELS } from "@/lib/product/workflow";
 
 export const Route = createFileRoute("/app/analyses/$analysisId")({
@@ -71,7 +71,7 @@ function AnalysisDetail() {
           : undefined
       }
       actions={
-        analysis && analysis.status !== "reconciling" ? (
+        analysis && analysis.status !== "reconciling" && can("reconcile") ? (
           <Button onClick={() => reconcile.mutate()} disabled={reconcile.isPending}>
             {reconcile.isPending
               ? "Reconciling…"

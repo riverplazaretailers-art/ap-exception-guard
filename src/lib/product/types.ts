@@ -145,15 +145,30 @@ export interface AccessRequestInput {
 export class ProductApiError extends Error {
   constructor(
     message: string,
-    readonly code: "unauthorized" | "forbidden" | "not_found" | "server" | "network",
+    readonly code:
+      | "unauthorized"
+      | "forbidden"
+      | "not_found"
+      | "server"
+      | "network"
+      | "unsupported"
+      | "not_configured",
   ) {
     super(message);
     this.name = "ProductApiError";
   }
 }
 
+export interface QuickBooksConnectionStatus {
+  connected: boolean;
+  realmLabel?: string;
+  lastSyncAt?: string;
+  message?: string;
+}
+
 export interface ProductApi {
-  readonly mode: "http" | "demo";
+  /** "demo" serves synthetic records only; "api" talks to the preserved backend gateway. */
+  readonly mode: "api" | "demo";
 
   signIn(email: string, password: string): Promise<SessionUser>;
   signOut(): Promise<void>;
@@ -171,6 +186,13 @@ export interface ProductApi {
   assignFinding(id: string, assignee: string): Promise<Finding>;
   resolveFinding(id: string, note: string): Promise<Finding>;
   dismissFinding(id: string, note: string): Promise<Finding>;
+
+  /** Multipart upload handled by the backend (POST /api/pilots/:id/files). */
+  uploadAnalysisFiles?(id: string, files: File[]): Promise<Analysis>;
+  getQuickBooksStatus?(analysisId: string): Promise<QuickBooksConnectionStatus>;
+  /** Backend-owned OAuth entry point. Returned as a URL to navigate to. */
+  getQuickBooksStartUrl?(analysisId: string): string;
+  syncQuickBooks?(analysisId: string): Promise<QuickBooksConnectionStatus>;
 
   listIntegrations(): Promise<Integration[]>;
   listPricingPlans(): Promise<PricingPlan[]>;

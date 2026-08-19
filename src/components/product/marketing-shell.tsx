@@ -9,6 +9,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { DemoModeBanner } from "./states";
+import { SecureWorkspaceAction } from "./handoff";
+import { isSecureLinkMode } from "@/lib/product";
 
 const NAV = [
   { to: "/workflow", label: "Workflow" },
@@ -49,12 +51,27 @@ export function MarketingShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
-              <Link to="/sign-in">Sign in</Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link to="/start">Request a Pilot Analysis</Link>
-            </Button>
+            {isSecureLinkMode ? (
+              <>
+                <SecureWorkspaceAction
+                  path="/sign-in"
+                  label="Sign in"
+                  variant="ghost"
+                  size="sm"
+                  className="hidden sm:inline-flex"
+                />
+                <SecureWorkspaceAction path="/request-access" label="Request a Pilot Analysis" size="sm" />
+              </>
+            ) : (
+              <>
+                <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+                  <Link to="/sign-in">Sign in</Link>
+                </Button>
+                <Button asChild size="sm">
+                  <Link to="/start">Request a Pilot Analysis</Link>
+                </Button>
+              </>
+            )}
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="md:hidden" aria-label="Open menu">

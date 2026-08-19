@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { MarketingShell, PageHeader } from "@/components/product/marketing-shell";
 import { ErrorState, SuccessNote } from "@/components/product/states";
 import { analytics } from "@/lib/analytics";
-import { productApi } from "@/lib/product";
+import { can, isSecureLinkMode, productApi } from "@/lib/product";
+import { SecureWorkspaceAction, UnavailableHere } from "@/components/product/handoff";
 
 const searchSchema = z.object({ plan: z.string().optional() });
 
@@ -64,7 +65,18 @@ function StartPage() {
         lede="Tell us who you are and what AP history you can share. We reply with scope, price in writing, and the records we need."
       />
       <section className="mx-auto grid max-w-5xl gap-8 px-4 py-12 lg:grid-cols-[1.1fr_0.9fr]">
-        {status === "sent" ? (
+        {!can("access_request") ? (
+          <UnavailableHere
+            title="Requests are handled in the secure workspace"
+            action={
+              <SecureWorkspaceAction path="/request-access" label="Request a Pilot Analysis" />
+            }
+          >
+            {isSecureLinkMode
+              ? "This shell does not accept real contact details. Continue to the preserved AP Exception Desk workspace to submit your request securely."
+              : "No request destination is configured for this environment yet."}
+          </UnavailableHere>
+        ) : status === "sent" ? (
           <div className="panel p-6">
             <SuccessNote>Request received.</SuccessNote>
             <p className="mt-3 text-sm text-muted-foreground">
