@@ -73,7 +73,7 @@ function SettingsPage() {
         <section className="border border-border bg-surface-raised p-5 lg:col-span-2">
           <p className="eyebrow">Connection mode</p>
           <dl className="mt-3 divide-y divide-border text-sm">
-            <Row label="Mode" value={MODE_LABELS[productMode]} />
+            <Row label="Mode" value={MODE_LABELS[productMode] ?? productMode} />
             <Row
               label="Backend gateway"
               value={
